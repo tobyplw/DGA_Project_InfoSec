@@ -6,6 +6,13 @@ __pycache__/
 # C extensions
 *.so
 
+#anything DS_store
+*.DS_store
+
+#anything model related
+*.pickle
+/Worksheets
+
 # Distribution / packaging
 .Python
 build/

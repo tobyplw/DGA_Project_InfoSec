@@ -1,23 +1,36 @@
 from collections import Counter
 import pandas as pd
-import features
+import features_isDGA
+import features_isDictDGA
 import pickle
-
+import time
 
 class predictor:
-    def __init__(self, file_name = None):
-        self.ngrams_counter = features.get_eng_ngrams()
+    def __init__(self):
+        self.ngrams_counter = features_isDGA.get_eng_ngrams()
+        self.dgaModel, self.dictModel = self.load_models()
 
-        if file_name:
-            self.model = self.load_model(file_name)
-
-    def load_model(self, model_file_name):
-        return pickle.load(open(model_file_name, "rb"))
+    def load_models(self):
+        dga_file_name = "DGA_model.pickle"
+        dict_file_name = "Dict_DGA_model.pickle"
+        return pickle.load(open(dga_file_name, "rb")), pickle.load(open(dict_file_name, "rb"))
 
     def predict_isDga(self, domain):
-        feature_df = features.extract_features(domain = domain, ngrams_counter = self.ngrams_counter)
+        feature_df = features_isDGA.extract_features(domain = domain, ngrams_counter = self.ngrams_counter)
 
-        result = self.model.predict(feature_df)
+        result = self.dgaModel.predict(feature_df)
+        data = result[0]
+        if data == 0:
+            return False
+        elif data == 1:
+            return True
+        else:
+            return None
+    
+    def predict_isDictDga(self, domain):
+        feature_df = features_isDictDGA.extract_features(domain = domain)
+
+        result = self.dictModel.predict(feature_df)
         data = result[0]
         if data == 0:
             return False
@@ -27,9 +40,12 @@ class predictor:
             return None
 
 
-pred = predictor("DGA_model.pickle")
+pred = predictor()
+domain = "lego.com"
 
-list = ["increaseinside.net","rememberbright.net","riddenready.net","belongdaughter.net",]
-
-for x in list:
-    print(pred.predict_isDga(x))
+if pred.predict_isDga(domain):
+    print("DGA Found: " + domain)
+if pred.predict_isDictDga(domain):
+    print("DGA Found: "+ domain)
+else:
+    print("Not Found: "+ domain)

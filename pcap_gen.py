@@ -46,7 +46,7 @@ def generate_synthetic_pcap(destination_domains, output_file, num_packets):
         # non DGA traffic spike
         # 10% chance of triggering
         elif random.randint(0,19) == 0:
-            packet_spike_length = random.randint(10,20)
+            packet_spike_length = random.randint(3,8)
             packet_seq = []
             for j in range(packet_spike_length):
                 packet = get_non_DGA_packet(source_ip, destination_domain)

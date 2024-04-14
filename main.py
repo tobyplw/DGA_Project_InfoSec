@@ -1,9 +1,11 @@
 import argparse
-from scapy.all import rdpcap, DNSQR, IP
+from scapy.all import rdpcap, DNSQR, IP, Raw
 import pandas as pd
 import matplotlib.pyplot as plt
 from predict import predictor
 from collections import defaultdict
+import matplotlib.dates as mdates
+import binascii
 
 def extract_domain_info(pcap_path):
     packets = rdpcap(pcap_path)
@@ -13,34 +15,49 @@ def extract_domain_info(pcap_path):
             timestamp = packet.time
             source_ip = packet[IP].src
             domain = packet[DNSQR].qname.decode("utf-8").rstrip('.')
-            domain_info.append((source_ip, domain, timestamp))
+            extraneous_data = binascii.hexlify(packet[Raw].load).decode('utf-8').upper() if packet.haslayer(Raw) else ""
+            domain_info.append((source_ip, domain, timestamp, extraneous_data))
     return domain_info
 
-def analyze_domains(domain_info, pred):
-    results = {'source_ip': [], 'domain': [], 'isDGA': [], 'isDictDGA': [], 'timestamp': []}
-    for source_ip, domain, timestamp in domain_info:
-        isDGA = pred.predict_isDga(domain)
-        isDictDGA = pred.predict_isDictDga(domain)
+
+def analyze_domains(domain_info, pred, use_expected):
+    results = {'source_ip': [], 'domain': [], 'isDGA': [], 'timestamp': []}
+    for source_ip, domain, timestamp, extraneous_data in domain_info:
+        if use_expected:
+            isDGA_combined = False if "4E4F4E2D444741" in extraneous_data else True
+        else:
+            isDGA_combined = pred.predict_isDga(domain)
+            if not isDGA_combined:
+                isDGA_combined = pred.predict_isDictDga(domain)
         results['source_ip'].append(source_ip)
         results['domain'].append(domain)
-        results['isDGA'].append(isDGA)
-        results['isDictDGA'].append(isDictDGA)
+        results['isDGA'].append(isDGA_combined)
         results['timestamp'].append(timestamp)
     return results
 
+
+
 def generate_frequency_graph(data_frame):
     for source_ip, df_group in data_frame.groupby('source_ip'):
+        df_group['isDGA'] = df_group['isDGA'].astype(int)
         df_group['timestamp'] = pd.to_datetime(df_group['timestamp'].astype(float), unit='s')
-        ts_resampled = df_group.set_index('timestamp').resample('H').size()
-
-        plt.figure(figsize=(10, 6))
-        plt.plot(ts_resampled.index, ts_resampled.values, marker='o', linestyle='-')
-        plt.title(f"Domain Query Frequency Over Time for IP: {source_ip}")
+        ts_resampled = df_group.set_index('timestamp').resample('10S')['isDGA'].sum()
+        moving_avg = ts_resampled.rolling(window=6, min_periods=1).mean()
+        
+        plt.figure(figsize=(15, 7))
+        plt.plot(moving_avg.index, moving_avg.values, marker='o', linestyle='-')
+        plt.title(f"DGA Query Frequency Over Time for IP: {source_ip}")
         plt.xlabel("Time")
-        plt.ylabel("Frequency")
-        plt.xticks(rotation=45)
-        plt.tight_layout()
+        plt.ylabel("Frequency (DGA Hits per 10 seconds)")
+        plt.xlim(df_group['timestamp'].min(), df_group['timestamp'].max())
+        plt.ylim(bottom=0) 
+        myFmt = mdates.DateFormatter('%Y-%m-%d %H:%M:%S')
+        plt.gca().xaxis.set_major_formatter(myFmt)
+        plt.gca().xaxis.set_major_locator(mdates.AutoDateLocator(maxticks=10))
+        plt.gcf().autofmt_xdate()
         plt.show()
+
+
 
 def generate_report(results, report_path):
     df = pd.DataFrame(results)
@@ -48,19 +65,15 @@ def generate_report(results, report_path):
     print(f"Report generated: {report_path}")
 
 def create_source_ip_profiles(df):
-    profiles = defaultdict(lambda: {'total_queries': 0, 'dga_queries': 0, 'dict_dga_queries': 0})
+    profiles = defaultdict(lambda: {'total_queries': 0, 'dga_queries': 0})
     for index, row in df.iterrows():
         profiles[row['source_ip']]['total_queries'] += 1
         if row['isDGA']:
             profiles[row['source_ip']]['dga_queries'] += 1
-        if row['isDictDGA']:
-            profiles[row['source_ip']]['dict_dga_queries'] += 1
-    # Calculate likelihood score
     for ip, profile in profiles.items():
         total = profile['total_queries']
         dga = profile['dga_queries']
-        dict_dga = profile['dict_dga_queries']
-        likelihood = (dga + dict_dga) / total if total > 0 else 0
+        likelihood = dga / total if total > 0 else 0
         profile['likelihood_score'] = likelihood
     return profiles
 
@@ -70,12 +83,14 @@ def save_profiles_to_csv(profiles, filename):
     profiles_df.to_csv(filename, index=False)
     print(f"Profiles saved to {filename}")
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Analyze a PCAP file for DGA domains and plot query frequencies.")
     parser.add_argument("pcap_path", help="Path to the PCAP file")
     parser.add_argument("--report", default="dga_report.csv", help="Path to the output report CSV file")
     parser.add_argument("--plot", action="store_true", help="Generate and display frequency plots for each source IP")
-
+    parser.add_argument("--expected", action="store_true", help="Use expected classification based on extraneous data")
+    
     args = parser.parse_args()
 
     print("Extracting domains and source IPs from PCAP...")
@@ -85,7 +100,7 @@ if __name__ == "__main__":
     pred = predictor()
 
     print("Analyzing domains...")
-    results = analyze_domains(domain_info, pred)
+    results = analyze_domains(domain_info, pred, args.expected)
     df = pd.DataFrame(results)
 
     if args.plot:

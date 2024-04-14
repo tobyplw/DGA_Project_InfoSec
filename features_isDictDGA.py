@@ -10,6 +10,16 @@ import pickle
 
 nltk.download('punkt')
 nltk.download('averaged_perceptron_tagger')
+print("Loading Word2Vec Model")
+word2vec_model = pickle.load(open("word2vec_model.pickle", "rb"))
+print("Finished")
+
+# https://www.ling.upenn.edu/courses/Fall_2003/ling001/penn_treebank_pos.html
+noun_list = ["NN", "NNS", "NNP", "NNPS"]
+verb_list = ["VB", "VBD", "VBG", "VBN", "VPZ","VBZ"]
+adverb_list = ["RB", "RBR", "RBS"]
+adjectives_list = ["JJ", "JJR", "JJS"]
+combined_list = noun_list + verb_list + adverb_list + adjectives_list 
 
 
 def split_words(domain):
@@ -18,13 +28,6 @@ def split_words(domain):
 
 def extract_POS(words):
     return nltk.pos_tag(words)
-
-# https://www.ling.upenn.edu/courses/Fall_2003/ling001/penn_treebank_pos.html
-noun_list = ["NN", "NNS", "NNP", "NNPS"]
-verb_list = ["VB", "VBD", "VBG", "VBN", "VPZ","VBZ"]
-adverb_list = ["RB", "RBR", "RBS"]
-adjectives_list = ["JJ", "JJR", "JJS"]
-combined_list = noun_list + verb_list + adverb_list + adjectives_list 
 
 def number_of_nouns(words):
     nouns = 0
@@ -93,10 +96,6 @@ def POS_ratio(counts, type):
         return counts["others"] / total
 
 
-print("Loading")
-word2vec_model = pickle.load(open("word2vec_model.pickle", "rb"))
-print("Finished")
-
 def similarity_avg(words):
     total_similiarity = 0
     total_combos = 0
@@ -116,7 +115,6 @@ def similarity_avg(words):
             total_combos+=1
     
     average_similiarity = total_similiarity / total_combos
-    #print(average_similiarity)
     return average_similiarity
 
 def extract_features(domain = "", data_frame = None):

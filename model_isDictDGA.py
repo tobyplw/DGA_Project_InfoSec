@@ -1,17 +1,19 @@
-# Load Libraries - Make sure to run this cell!
 import pandas as pd
 import numpy as np
-from collections import Counter
 from sklearn import tree, model_selection, metrics
 import pickle
 import features_isDictDGA
 import time
 
+# A portion of this code was written by following worksheets found at https://github.com/yevheniyc/Projects in the DGA Detection using Machine Learning Series
+# Part 2 - Machine Learning: https://notebook.community/yevheniyc/Python/1m_ML_Security/notebooks/day_3/Worksheet%206%20-%20DGA%20Detection%20ML%20Classification
 
-
-
-
+print("Creating isDGA Model (used to predict traditional DGAs)")
+dataset = "./data/Dict_DGAs_Dataset.csv"
+print("Reading from Dataset: " + dataset)
 data_frame = pd.read_csv("./data/Dict_DGAs_Dataset.csv")
+
+
 print("\n______________________________________________________________\n")
 
 print("Data Frame shape: " + str(data_frame.shape))

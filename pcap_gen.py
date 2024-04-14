@@ -138,7 +138,7 @@ if __name__ == "__main__":
     source_ip = "192.168.1.100"  # Replace with the source IoT device IP
     destination_domains = get_domains()
     output_file = "synthetic_traffic.pcap"
-    num_packets = 3000
+    num_packets = 4500
 
     generate_synthetic_pcap(destination_domains, output_file, num_packets)
     print(f"Synthetic PCAP file '{output_file}' generated successfully.")

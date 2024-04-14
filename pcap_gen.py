@@ -1,7 +1,7 @@
 import random
 import socket
 from datetime import datetime, timedelta
-from scapy.all import IP, UDP, DNS, DNSQR, Ether, wrpcap
+from scapy.all import IP, UDP, DNS, DNSQR, Ether, Raw, wrpcap
 import csv
 import time
 import base64
@@ -10,42 +10,63 @@ from itertools import product
 import numpy as np
 from dgas import *
 
-
-def generate_synthetic_pcap(destination_domains, output_file, num_packets=100):
-    packets = []
+def generate_synthetic_pcap(destination_domains, output_file, num_packets):
+    packets_w_dga = []
+    packets_wo_dga = []
     cur_time = 0
     # this points towards a cloud hosting server
     destination_domain = '54.39.23.28'
 
-    for i in range(num_packets):
-        source_ip = get_source_IP()
+    # simulate infected device
+    infected_device_ip = get_source_IP(0)
+    infected_device_spikes = [200, 400, 600, 800, 1000]
+    infected_device_DGA = random.randint(0, 6)
 
-        # non DGA traffic
-        if i != 33:
-            packet = get_non_DGA_packet(source_ip, destination_domain)
-            cur_time += non_DGA_timing_inc()
-            packet.time = cur_time
-            packets.append(packet)
+    for i in range(num_packets):
         
-        # DGA traffic
-        else:
-            packet_seq = get_DGA_packet(source_ip, destination_domain)
+        # gets a random source ip
+        source_ip = get_source_IP(99)
+
+        # partiuclar infected device
+        if i in infected_device_spikes:
+            packet_seq = get_DGA_packet(infected_device_ip, destination_domain, infected_device_DGA)
             for packet in packet_seq:
                 cur_time += DGA_timing_inc()
                 packet.time = cur_time
-            packets.append(packet_seq)
+            packets_w_dga.append(packet_seq)
+
+        # DGA traffic
+        elif i == 2000:
+            packet_seq = get_DGA_packet(source_ip, destination_domain, 99)
+            for packet in packet_seq:
+                cur_time += DGA_timing_inc()
+                packet.time = cur_time
+            packets_w_dga.append(packet_seq)
+        
+        # non DGA traffic
+        else:
+            packet = get_non_DGA_packet(source_ip, destination_domain)
+            cur_time += non_DGA_timing_inc()
+            packet.time = cur_time
+            packets_w_dga.append(packet)
+            packets_wo_dga.append(packet)
 
     # writes the pcap to the outfile
-    wrpcap(output_file, packets)
+    wrpcap(output_file, packets_w_dga)
+    wrpcap("synth_traffic_non_dga.pcap", packets_wo_dga)
 
-def get_source_IP():
-    
-    return random.choice(['192.168.1.100','10.0.0.2','172.16.0.1','169.254.0.1','198.51.100.1'])
+def get_source_IP(seed):
+    ip_array = ['192.168.1.100','10.0.0.2','172.16.0.1','169.254.0.1','198.51.100.1']
+    if seed == 99:
+        return random.choice(ip_array)
+    else:
+        return ip_array[seed]
 
 # returns single packet
 def get_non_DGA_packet(source_ip, destination_domain):
+    DGA_TAG = "NON"
     domain = ''.join(random.choice(destination_domains))
-    packet = Ether()/IP(src=source_ip, dst=destination_domain)/UDP(dport=53)/DNS(rd=1, qd=DNSQR(qname=domain))
+    packet = Ether()/IP(src=source_ip, dst=destination_domain)/UDP(dport=53)/DNS(rd=1, qd=DNSQR(qname=domain))/Raw(load=DGA_TAG.encode())
     return packet
 
 def non_DGA_timing_inc():
@@ -57,11 +78,12 @@ def non_DGA_timing_inc():
     return random_number
 
 # returns sequence of packets
-def get_DGA_packet(source_ip, destination_domain):
+def get_DGA_packet(source_ip, destination_domain, seed):
     packet_seq = []
-    domain_list = pickDGA(destination_domain)
+    DGA_TAG = "DGA"
+    domain_list = pickDGA(seed)
     for d in domain_list:
-        packet = Ether()/IP(src=source_ip, dst=destination_domain)/UDP(dport=53)/DNS(rd=1, qd=DNSQR(qname=d))
+        packet = Ether()/IP(src=source_ip, dst=destination_domain)/UDP(dport=53)/DNS(rd=1, qd=DNSQR(qname=d))/Raw(load=DGA_TAG.encode())
         packet_seq.append(packet)
     return packet_seq
 
@@ -73,7 +95,7 @@ def DGA_timing_inc():
 
     return random_number
 
-def pickDGA(destination_domain):
+def pickDGA(seed):
     domain_list = []
     dga_list = {
         # non dictionary DGA
@@ -88,8 +110,10 @@ def pickDGA(destination_domain):
     }
     for i in range(len(dga_list)):
         domain_list = dga_list[i]()
-    domain_list = dga_list[random.randint(0, len(dga_list)-1)]()
-    domain_list = dga_list[5]()
+    if seed == 99:
+        domain_list = dga_list[random.randint(0, len(dga_list)-1)]()
+    else:
+        domain_list = dga_list[seed]()
     return domain_list
 
 def get_domains():
@@ -102,7 +126,7 @@ if __name__ == "__main__":
     source_ip = "192.168.1.100"  # Replace with the source IoT device IP
     destination_domains = get_domains()
     output_file = "synthetic_traffic.pcap"
-    num_packets = 100
+    num_packets = 5000
 
     generate_synthetic_pcap(destination_domains, output_file, num_packets)
     print(f"Synthetic PCAP file '{output_file}' generated successfully.")

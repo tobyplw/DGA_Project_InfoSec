@@ -1,14 +1,12 @@
-# Load Libraries - Make sure to run this cell!
 import pandas as pd
 import numpy as np
-from collections import Counter
 from sklearn import tree, model_selection, metrics
 import pickle
 import features_isDGA
 import time
 
-
-
+# A portion of this code was written by following worksheets found at https://github.com/yevheniyc/Projects in the DGA Detection using Machine Learning Series
+# Part 2 - Machine Learning: https://notebook.community/yevheniyc/Python/1m_ML_Security/notebooks/day_3/Worksheet%206%20-%20DGA%20Detection%20ML%20Classification
 
 
 data_frame = pd.read_csv("./data/dga_data_full.csv")
@@ -46,6 +44,7 @@ data_frame_final.head()
 target = data_frame_final['isDGA']
 feature_matrix = data_frame_final.drop(['isDGA'], axis=1)
 
+#split training, testing data 75% to 25%
 feature_matrix_train, feature_matrix_test, target_train, target_test = model_selection.train_test_split(feature_matrix, target, test_size = 0.25, random_state = 33)
 
 print("\n______________________________________________________________\n")

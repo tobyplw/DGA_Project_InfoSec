@@ -1,9 +1,7 @@
-from collections import Counter
 import pandas as pd
 import features_isDGA
 import features_isDictDGA
 import pickle
-import time
 
 class predictor:
     def __init__(self):
@@ -38,14 +36,3 @@ class predictor:
             return True
         else:
             return None
-
-
-pred = predictor()
-domain = "lego.com"
-
-if pred.predict_isDga(domain):
-    print("DGA Found: " + domain)
-if pred.predict_isDictDga(domain):
-    print("DGA Found: "+ domain)
-else:
-    print("Not Found: "+ domain)

@@ -3,6 +3,7 @@ from scapy.all import rdpcap, DNSQR, IP
 import pandas as pd
 import matplotlib.pyplot as plt
 from predict import predictor
+from collections import defaultdict
 
 def extract_domain_info(pcap_path):
     packets = rdpcap(pcap_path)
@@ -41,11 +42,33 @@ def generate_frequency_graph(data_frame):
         plt.tight_layout()
         plt.show()
 
-
 def generate_report(results, report_path):
     df = pd.DataFrame(results)
     df.to_csv(report_path, index=False)
     print(f"Report generated: {report_path}")
+
+def create_source_ip_profiles(df):
+    profiles = defaultdict(lambda: {'total_queries': 0, 'dga_queries': 0, 'dict_dga_queries': 0})
+    for index, row in df.iterrows():
+        profiles[row['source_ip']]['total_queries'] += 1
+        if row['isDGA']:
+            profiles[row['source_ip']]['dga_queries'] += 1
+        if row['isDictDGA']:
+            profiles[row['source_ip']]['dict_dga_queries'] += 1
+    # Calculate likelihood score
+    for ip, profile in profiles.items():
+        total = profile['total_queries']
+        dga = profile['dga_queries']
+        dict_dga = profile['dict_dga_queries']
+        likelihood = (dga + dict_dga) / total if total > 0 else 0
+        profile['likelihood_score'] = likelihood
+    return profiles
+
+def save_profiles_to_csv(profiles, filename):
+    profiles_df = pd.DataFrame.from_dict(profiles, orient='index').reset_index()
+    profiles_df.rename(columns={'index': 'source_ip'}, inplace=True)
+    profiles_df.to_csv(filename, index=False)
+    print(f"Profiles saved to {filename}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Analyze a PCAP file for DGA domains and plot query frequencies.")
@@ -63,11 +86,15 @@ if __name__ == "__main__":
 
     print("Analyzing domains...")
     results = analyze_domains(domain_info, pred)
+    df = pd.DataFrame(results)
 
     if args.plot:
         print("Generating frequency plots...")
-        df = pd.DataFrame(results)
         generate_frequency_graph(df)
 
     print("Generating report...")
     generate_report(results, args.report)
+
+    print("Creating source IP profiles...")
+    profiles = create_source_ip_profiles(df)
+    save_profiles_to_csv(profiles, 'source_ip_profiles.csv')

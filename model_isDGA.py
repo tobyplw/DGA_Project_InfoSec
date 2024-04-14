@@ -3,9 +3,6 @@ import pandas as pd
 import numpy as np
 from collections import Counter
 from sklearn import tree, model_selection, metrics
-import seaborn as sns
-import matplotlib.pyplot as plt
-import matplotlib
 import pickle
 import features_isDGA
 import time

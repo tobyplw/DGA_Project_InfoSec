@@ -2,8 +2,9 @@ import re
 import pandas as pd
 import numpy as np
 from collections import Counter
-import whois
 
+# A portion of this code was written by following worksheets found at https://github.com/yevheniyc/Projects in the DGA Detection using Machine Learning Series
+# Part 1 - Feature Engineering: https://notebook.community/yevheniyc/Python/1m_ML_Security/notebooks/day_3/Worksheet%205%20-%20Feature%20Engineering
 
 
 def H_entropy (x):
@@ -25,17 +26,9 @@ def vowel_consonant_ratio (x):
         ratio = 0  
     return ratio
 
-def whois_extraction (domain):
-    try:
-        w = whois.whois(domain)
-        return 1
-    except whois.parser.PywhoisError as e:
-        print(e)
-        return 0
 
 # ngrams: Implementation according to Schiavoni 2014: "Phoenix: DGA-based Botnet Tracking and Intelligence"
 # http://s2lab.isg.rhul.ac.uk/papers/files/dimva2014.pdf
-
 def ngrams(word, n):
     # Extract all ngrams and return a regular Python list
     # Input word: can be a simple string or a list of strings
@@ -77,7 +70,6 @@ def ngram_feature(domain, d, n):
     # sum is normalized
     
     l_ngrams = ngrams(domain, n)
-#     print(l_ngrams)
     count_sum=0
     for ngram in l_ngrams:
         if d[ngram]:
@@ -89,8 +81,6 @@ def ngram_feature(domain, d, n):
     return feature
     
 def average_ngram_feature(l_ngram_feature):
-    # input is a list of calls to ngram_feature(domain, d, n)
-    # usually you would use various n values, like 1,2,3...
     return sum(l_ngram_feature)/len(l_ngram_feature)
 
 def get_eng_ngrams():

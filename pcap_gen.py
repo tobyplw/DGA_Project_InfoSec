@@ -43,6 +43,18 @@ def generate_synthetic_pcap(destination_domains, output_file, num_packets):
                 packet.time = cur_time
             packets_w_dga.append(packet_seq)
         
+        # non DGA traffic spike
+        # 10% chance of triggering
+        elif random.randint(0,19) == 0:
+            packet_spike_length = random.randint(10,20)
+            packet_seq = []
+            for j in range(packet_spike_length):
+                packet = get_non_DGA_packet(source_ip, destination_domain)
+                cur_time += DGA_timing_inc()
+                packet.time = cur_time
+                packets_w_dga.append(packet)
+                packets_wo_dga.append(packet)
+
         # non DGA traffic
         else:
             packet = get_non_DGA_packet(source_ip, destination_domain)
@@ -126,11 +138,7 @@ if __name__ == "__main__":
     source_ip = "192.168.1.100"  # Replace with the source IoT device IP
     destination_domains = get_domains()
     output_file = "synthetic_traffic.pcap"
-    num_packets = 5000
+    num_packets = 3000
 
     generate_synthetic_pcap(destination_domains, output_file, num_packets)
     print(f"Synthetic PCAP file '{output_file}' generated successfully.")
-
-
-    # method w/ five different IPs to emulate
-    # change

@@ -1,7 +1,7 @@
 import random
 import socket
 from datetime import datetime, timedelta
-from scapy.all import IP, UDP, DNS, DNSQR, Ether, wrpcap
+from scapy.all import IP, UDP, DNS, DNSQR, Ether, Raw, wrpcap
 import csv
 import time
 import base64
@@ -64,8 +64,9 @@ def get_source_IP(seed):
 
 # returns single packet
 def get_non_DGA_packet(source_ip, destination_domain):
+    DGA_TAG = "NON"
     domain = ''.join(random.choice(destination_domains))
-    packet = Ether()/IP(src=source_ip, dst=destination_domain)/UDP(dport=53)/DNS(rd=1, qd=DNSQR(qname=domain))
+    packet = Ether()/IP(src=source_ip, dst=destination_domain)/UDP(dport=53)/DNS(rd=1, qd=DNSQR(qname=domain))/Raw(load=DGA_TAG.encode())
     return packet
 
 def non_DGA_timing_inc():
@@ -79,9 +80,10 @@ def non_DGA_timing_inc():
 # returns sequence of packets
 def get_DGA_packet(source_ip, destination_domain, seed):
     packet_seq = []
+    DGA_TAG = "DGA"
     domain_list = pickDGA(seed)
     for d in domain_list:
-        packet = Ether()/IP(src=source_ip, dst=destination_domain)/UDP(dport=53)/DNS(rd=1, qd=DNSQR(qname=d))
+        packet = Ether()/IP(src=source_ip, dst=destination_domain)/UDP(dport=53)/DNS(rd=1, qd=DNSQR(qname=d))/Raw(load=DGA_TAG.encode())
         packet_seq.append(packet)
     return packet_seq
 

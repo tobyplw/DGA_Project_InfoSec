@@ -37,7 +37,7 @@ def generate_synthetic_pcap(destination_domains, output_file, num_packets):
 
         # DGA traffic
         elif i == 2000:
-            packet_seq = get_DGA_packet(source_ip, destination_domain, 99)
+            packet_seq = get_DGA_packet(infected_device_ip, destination_domain, 99)
             for packet in packet_seq:
                 cur_time += DGA_timing_inc()
                 packet.time = cur_time

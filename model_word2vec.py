@@ -2,7 +2,7 @@ import gensim.downloader as api
 import pickle
 
 
-#create word2vec_model
+#create word2vec_model pickle
 print("Creating Word2Vec Model")
 word2vec_model = api.load('word2vec-google-news-300')
 pickle.dump(word2vec_model, open("word2vec_model.pickle", "wb"))

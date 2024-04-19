@@ -167,7 +167,7 @@ def goziDGA():
     seed = (flag << 16) + days_passed - 306607824
     r = Rand(seed) 
 
-    for i in range(16):
+    for i in range(100):
         r.rand()
         v = r.rand()
         length = v % 12 + 12
@@ -192,7 +192,7 @@ def banjoriDGA():
     domain_list = []
     seed = 'earnestnessbiophysicalohax.com'
     domain = seed
-    for i in range(50):
+    for i in range(100):
         dl = [ord(x) for x in list(domain)]
         dl[0] = map_to_lowercase_letter(dl[0] + dl[3])
         dl[1] = map_to_lowercase_letter(dl[0] + 2*dl[1])

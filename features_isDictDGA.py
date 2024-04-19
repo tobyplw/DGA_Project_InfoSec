@@ -7,10 +7,12 @@ import wordninja
 import nltk
 import pickle
 
-
+#make sure these dependencies are downloaded
 nltk.download('punkt')
 nltk.download('averaged_perceptron_tagger')
 print("Loading Word2Vec Model")
+
+#open up word2Vec model
 word2vec_model = pickle.load(open("word2vec_model.pickle", "rb"))
 print("Finished")
 
@@ -21,14 +23,16 @@ adverb_list = ["RB", "RBR", "RBS"]
 adjectives_list = ["JJ", "JJR", "JJS"]
 combined_list = noun_list + verb_list + adverb_list + adjectives_list 
 
-
+#split domain into list of words using wordninja
 def split_words(domain):
     stripped_domain = domain.split(".")[0]
     return wordninja.split(stripped_domain)
 
+#exctract the Part of Speech for a given word
 def extract_POS(words):
     return nltk.pos_tag(words)
 
+#calculate the number of noun in a word list
 def number_of_nouns(words):
     nouns = 0
     for word in words:
@@ -37,6 +41,7 @@ def number_of_nouns(words):
             nouns+=1
     return nouns
 
+#calculate the number of verbs in a word list
 def number_of_verbs(words):
     verbs = 0
     for word in words:
@@ -45,6 +50,7 @@ def number_of_verbs(words):
             verbs+=1
     return verbs
 
+#calculate the number of adverbs in a word list
 def number_of_adverbs(words):
     adverbs = 0
     for word in words:
@@ -53,6 +59,7 @@ def number_of_adverbs(words):
             adverbs+=1
     return adverbs
 
+#calculate the number of adjectives in a word list
 def number_of_adjectives(words):
     adjectives = 0
 
@@ -62,6 +69,7 @@ def number_of_adjectives(words):
             adjectives+=1
     return adjectives
 
+#calculate the number of Others (not noun, verb, adverb, adjective) in a word list
 def number_of_others(words):
     others = 0
     for word in words:
@@ -70,6 +78,7 @@ def number_of_others(words):
             others+=1
     return others
 
+#get all the counts for a row
 def get_POS_Counts(row):
     nouns = row['num_nouns']
     verbs = row['num_verbs']
@@ -78,7 +87,7 @@ def get_POS_Counts(row):
     others = row['num_others']
     return {"nouns": nouns,"verbs" : verbs, "adverbs" : adverbs, "adjectives" : adjectives, "others" : others}
 
-
+#calculate ratios between all the different POS tags
 def POS_ratio(counts, type):
     total = 0
     for value in counts.values():
@@ -95,7 +104,7 @@ def POS_ratio(counts, type):
     if type == "others":
         return counts["others"] / total
 
-
+#calculate the average similiarity between all words in a word list
 def similarity_avg(words):
     total_similiarity = 0
     total_combos = 0
@@ -107,6 +116,7 @@ def similarity_avg(words):
     for i in range(len(words)):
         for j in range(i + 1, len(words)):
             try:
+                #get similiary from word2vec_model
                 similarity = word2vec_model.similarity(words[i], words[j])
             except KeyError:
                 similarity = 0
@@ -114,9 +124,11 @@ def similarity_avg(words):
             total_similiarity+=similarity
             total_combos+=1
     
+    #calcilate average
     average_similiarity = total_similiarity / total_combos
     return average_similiarity
 
+#extract features from either a singular domain, or a data_frame
 def extract_features(domain = "", data_frame = None):
     if data_frame is None:
         d = {'domain': [domain]}

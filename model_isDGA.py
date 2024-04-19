@@ -8,7 +8,7 @@ import time
 # A portion of this code was written by following worksheets found at https://github.com/yevheniyc/Projects in the DGA Detection using Machine Learning Series
 # Part 2 - Machine Learning: https://notebook.community/yevheniyc/Python/1m_ML_Security/notebooks/day_3/Worksheet%206%20-%20DGA%20Detection%20ML%20Classification
 
-
+#read in data files
 data_frame = pd.read_csv("./data/dga_data_full.csv")
 data_frame.drop(['host', 'subclass'], axis=1, inplace=True)
 print("\n______________________________________________________________\n")
@@ -19,7 +19,7 @@ print("Data Frame Sample: ")
 print(data_frame.sample(n=5).head())
 
 
-
+#extract features from the data
 data_frame = features_isDGA.extract_features(data_frame=data_frame)
 
 
@@ -58,6 +58,7 @@ print(feature_matrix_train.sample(n=5).head())
 
 print("\n______________________________________________________________\n")
 print("Training Model...")
+#create DecisionTree Classifier
 classifier = tree.DecisionTreeClassifier()
 start = time.time()
 classifier = classifier.fit(feature_matrix_train, target_train)
@@ -68,7 +69,10 @@ print('Training time: ' + str(end-start) + " sec")
 
 
 print("\n______________________________________________________________\n")
+#predict domains 
 target_prediction = classifier.predict(feature_matrix_test)
+
+#get accuracy score
 print("Model Accuracy: " + str(metrics.accuracy_score(target_test, target_prediction)) + "%")
 print('\nConfusion Matrix\n', metrics.confusion_matrix(target_test, target_prediction))
 print("\n______________________________________________________________\n")
@@ -76,7 +80,7 @@ print("Classification Report: \n")
 print(metrics.classification_report(target_test, target_prediction, target_names=['legit', 'dga']))
 
 
-
+#load model into pickle file 
 model_file_name = "DGA_model.pickle"
 print("\n______________________________________________________________\n")
 print("Dumping model into: " + model_file_name)

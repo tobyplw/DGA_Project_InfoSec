@@ -8,6 +8,7 @@ import time
 # A portion of this code was written by following worksheets found at https://github.com/yevheniyc/Projects in the DGA Detection using Machine Learning Series
 # Part 2 - Machine Learning: https://notebook.community/yevheniyc/Python/1m_ML_Security/notebooks/day_3/Worksheet%206%20-%20DGA%20Detection%20ML%20Classification
 
+#read data in from dataset
 print("Creating isDGA Model (used to predict traditional DGAs)")
 dataset = "./data/Dict_DGAs_Dataset.csv"
 print("Reading from Dataset: " + dataset)
@@ -22,7 +23,7 @@ print("Data Frame Sample: ")
 print(data_frame.sample(n=5).head())
 
 
-
+#extract features from dataset
 data_frame = features_isDictDGA.extract_features(data_frame=data_frame)
 
 
@@ -47,6 +48,7 @@ data_frame_final.head()
 target = data_frame_final['isDGA']
 feature_matrix = data_frame_final.drop(['isDGA'], axis=1)
 
+#split training and test data, 75% and 25%
 feature_matrix_train, feature_matrix_test, target_train, target_test = model_selection.train_test_split(feature_matrix, target, test_size = 0.25, random_state = 33)
 
 print("\n______________________________________________________________\n")
@@ -60,8 +62,10 @@ print(feature_matrix_train.sample(n=5).head())
 
 print("\n______________________________________________________________\n")
 print("Training Model...")
+#create DecisionTree Classifier
 classifier = tree.DecisionTreeClassifier()
 start = time.time()
+#train classifier on features
 classifier = classifier.fit(feature_matrix_train, target_train)
 end = time.time()
 print("Training Completed...")
@@ -70,7 +74,9 @@ print('Training time: ' + str(end-start) + " sec")
 
 
 print("\n______________________________________________________________\n")
+#create prediction on test data using classifier
 target_prediction = classifier.predict(feature_matrix_test)
+#ouptut accuracy score
 print("Model Accuracy: " + str(metrics.accuracy_score(target_test, target_prediction)) + "%")
 print('\nConfusion Matrix\n', metrics.confusion_matrix(target_test, target_prediction))
 print("\n______________________________________________________________\n")
@@ -78,7 +84,7 @@ print("Classification Report: \n")
 print(metrics.classification_report(target_test, target_prediction, target_names=['legit', 'dga']))
 
 
-
+#load model into pickle file 
 model_file_name = "Dict_DGA_model.pickle"
 print("\n______________________________________________________________\n")
 print("Dumping model into: " + model_file_name)

@@ -7,8 +7,9 @@ from collections import defaultdict
 import matplotlib.dates as mdates
 import binascii
 
+#Extract domain info from pcaps
 def extract_domain_info(pcap_path):
-    packets = rdpcap(pcap_path)
+    packets = rdpcap(pcap_path) #read packets
     domain_info = []
     for packet in packets:
         if packet.haslayer(DNSQR) and packet.haslayer(IP):
@@ -20,11 +21,12 @@ def extract_domain_info(pcap_path):
     return domain_info
 
 
+#Analyze domains using the model
 def analyze_domains(domain_info, pred, use_expected):
     results = {'source_ip': [], 'domain': [], 'isDGA': [], 'timestamp': []}
     for source_ip, domain, timestamp, extraneous_data in domain_info:
         if use_expected:
-            isDGA_combined = False if "4E4F4E2D444741" in extraneous_data else True
+            isDGA_combined = False if "4E4F4E" in extraneous_data else True #check for extraneous data(--expected flag)
         else:
             isDGA_combined = pred.predict_isDga(domain)
             if not isDGA_combined:
@@ -36,7 +38,7 @@ def analyze_domains(domain_info, pred, use_expected):
     return results
 
 
-
+#Generate frequency graphs for each profile
 def generate_frequency_graph(data_frame):
     for source_ip, df_group in data_frame.groupby('source_ip'):
         df_group['isDGA'] = df_group['isDGA'].astype(int)
@@ -58,12 +60,13 @@ def generate_frequency_graph(data_frame):
         plt.show()
 
 
-
+#Generate the csv report(--report flag)
 def generate_report(results, report_path):
     df = pd.DataFrame(results)
     df.to_csv(report_path, index=False)
     print(f"Report generated: {report_path}")
 
+#creates source profiles
 def create_source_ip_profiles(df):
     profiles = defaultdict(lambda: {'total_queries': 0, 'dga_queries': 0})
     for index, row in df.iterrows():
@@ -77,11 +80,19 @@ def create_source_ip_profiles(df):
         profile['likelihood_score'] = likelihood
     return profiles
 
+#Save each unique profile to another csv
 def save_profiles_to_csv(profiles, filename):
     profiles_df = pd.DataFrame.from_dict(profiles, orient='index').reset_index()
     profiles_df.rename(columns={'index': 'source_ip'}, inplace=True)
     profiles_df.to_csv(filename, index=False)
     print(f"Profiles saved to {filename}")
+
+#Provides an 'alert' based on the given threshold
+def alert_on_possible_infection(profiles, threshold=0.5):
+    for ip, profile in profiles.items():
+        if profile['likelihood_score'] > threshold:
+            print(f"ALERT: Potential DGA malware infection detected on IP: {ip}")
+
 
 
 if __name__ == "__main__":
@@ -113,3 +124,5 @@ if __name__ == "__main__":
     print("Creating source IP profiles...")
     profiles = create_source_ip_profiles(df)
     save_profiles_to_csv(profiles, 'source_ip_profiles.csv')
+
+    alert_on_possible_infection(profiles)

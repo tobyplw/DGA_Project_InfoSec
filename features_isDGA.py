@@ -6,15 +6,14 @@ from collections import Counter
 # A portion of this code was written by following worksheets found at https://github.com/yevheniyc/Projects in the DGA Detection using Machine Learning Series
 # Part 1 - Feature Engineering: https://notebook.community/yevheniyc/Python/1m_ML_Security/notebooks/day_3/Worksheet%205%20-%20Feature%20Engineering
 
-
-def H_entropy (x):
-    # Calculate Shannon Entropy
-    prob = [ float(x.count(c)) / len(x) for c in dict.fromkeys(list(x)) ] 
+# Calculate Shannon Entropy for a word
+def H_entropy (word):
+    prob = [ float(word.count(c)) / len(word) for c in dict.fromkeys(list(word)) ] 
     H = - sum([ p * np.log2(p) for p in prob ]) 
     return H
 
+# Calculate vowel to consonant ratio
 def vowel_consonant_ratio (x):
-    # Calculate vowel to consonant ratio
     x = x.lower()
     vowels_pattern = re.compile('([aeiou])')
     consonants_pattern = re.compile('([b-df-hj-np-tv-z])')
@@ -38,7 +37,6 @@ def ngrams(word, n):
     l_ngrams = []
     if isinstance(word, list):
         for w in word:
-            #print(w)
             if isinstance(n, list):
                 for curr_n in n:
                     try:
@@ -60,6 +58,8 @@ def ngrams(word, n):
 #     print(l_ngrams)
     return l_ngrams
 
+# ngrams: Implementation according to Schiavoni 2014: "Phoenix: DGA-based Botnet Tracking and Intelligence"
+# http://s2lab.isg.rhul.ac.uk/papers/files/dimva2014.pdf
 def ngram_feature(domain, d, n):
     # Input is your domain string or list of domain strings
     # a dictionary object d that contains the count for most common english words
@@ -79,10 +79,12 @@ def ngram_feature(domain, d, n):
     except:
         feature = 0
     return feature
-    
+
+#sum of ngrams features
 def average_ngram_feature(l_ngram_feature):
     return sum(l_ngram_feature)/len(l_ngram_feature)
 
+#get all the english ngrams from top 10000 words
 def get_eng_ngrams():
     top_en_words = pd.read_csv("./data/google-10000-english.txt", header=None, names=['words'])
     l_en_ngrams = ngrams(list(top_en_words['words']), [1,2,3])
@@ -90,15 +92,16 @@ def get_eng_ngrams():
 
     return ngrams_counter
     
-
+#length of domain
 def length(domain):
     return len(domain)
 
+#number of digits in the domain
 def digit_count(domain):
     return domain.count('[0.9]')
 
 
-
+#extract features from either a singular domain, or a data_frame
 def extract_features(ngrams_counter = get_eng_ngrams(), domain = "", data_frame = None):
     if data_frame is None:
         d = {'domain': [domain]}

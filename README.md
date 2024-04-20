@@ -37,7 +37,7 @@ This script generates two files: synthetic_traffic.pcap and synth_traffic_non_dg
 ## Setup and Usage
 Run the analysis by specifying the path to the PCAP file along with optional flags to control the output:
 
-    python3 main.py --pcap_path "path_to_pcap_file.pcap" --report --plot
+    python3 main.py "path_to_pcap_file.pcap" --report dga_report.csv --plot
 
 --pcap_path: Path to the pcap file.
 
